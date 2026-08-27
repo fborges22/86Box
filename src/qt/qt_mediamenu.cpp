@@ -1125,7 +1125,7 @@ MediaMenu::rdiskUpdateMenu(int i)
 void
 MediaMenu::moNewImage(int i)
 {
-    NewFloppyDialog dialog(NewFloppyDialog::MediaType::Mo, parentWidget);
+    NewFloppyDialog dialog(NewFloppyDialog::MediaType::Mo, parentWidget, mo_drives[i].type);
     switch (dialog.exec()) {
         default:
             break;
@@ -1216,7 +1216,7 @@ MediaMenu::moReloadPrev(int i)
     } else {
         ui_sb_update_icon_state(SB_MO | i, 0);
     }
-    ui_sb_update_icon_wp(SB_MO | i, mo_drives[i].read_only);
+    ui_sb_update_icon_state(SB_MO | i, mo_drives[i].read_only);
 
     moUpdateMenu(i);
     ui_sb_update_tip(SB_MO | i);

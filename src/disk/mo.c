@@ -60,7 +60,7 @@ const uint8_t mo_command_flags[0x100] = {
     [0x00]          = IMPLEMENTED | CHECK_READY,
     [0x01]          = IMPLEMENTED | ALLOW_UA | SCSI_ONLY,
     [0x03]          = IMPLEMENTED | ALLOW_UA,
-    [0x04]          = IMPLEMENTED | CHECK_READY | ALLOW_UA | SCSI_ONLY,
+    [0x04]          = IMPLEMENTED | CHECK_READY | ALLOW_UA,
     [0x08]          = IMPLEMENTED | CHECK_READY,
     [0x0a]          = IMPLEMENTED | CHECK_READY,
     [0x0b]          = IMPLEMENTED | CHECK_READY,
@@ -1429,13 +1429,6 @@ mo_command(scsi_common_t *sc, const uint8_t *cdb)
             mo_set_phase(dev, SCSI_PHASE_DATA_OUT);
             alloc_length = dev->drv->sector_size;
 
-            if ((cdb[0] != GPCMD_VERIFY_6) &&
-                (cdb[0] != GPCMD_VERIFY_10) &&
-                (cdb[0] != GPCMD_VERIFY_12) && dev->drv->read_only) {
-                mo_write_protected(dev);
-                break;
-            }
-
             switch (cdb[0]) {
                 case GPCMD_VERIFY_6:
                 case GPCMD_WRITE_6:
@@ -1509,9 +1502,7 @@ mo_command(scsi_common_t *sc, const uint8_t *cdb)
             mo_set_phase(dev, SCSI_PHASE_DATA_OUT);
             alloc_length = dev->drv->sector_size;
 
-            if (dev->drv->read_only)
-                mo_write_protected(dev);
-            else if ((cdb[1] & 6) == 6)
+            if ((cdb[1] & 6) == 6)
                 mo_invalid_field(dev, cdb[1]);
             else {
                 dev->sector_len = (cdb[7] << 8) | cdb[8];
@@ -1810,11 +1801,6 @@ mo_command(scsi_common_t *sc, const uint8_t *cdb)
 
         case GPCMD_ERASE_10:
         case GPCMD_ERASE_12:
-            if (dev->drv->read_only) {
-                mo_write_protected(dev);
-                break;
-            }
-
             /* Relative address. */
             if (cdb[1] & 1)
                 previous_pos = dev->sector_pos;

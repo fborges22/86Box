@@ -77,7 +77,7 @@ static const QStringList rdiskTypes = {
 #endif
 };
 
-NewFloppyDialog::NewFloppyDialog(MediaType type, QWidget *parent, int tape_drive_type)
+NewFloppyDialog::NewFloppyDialog(MediaType type, QWidget *parent, int drive_type)
     : QDialog(parent)
     , ui(new Ui::NewFloppyDialog)
     , mediaType_(type)
@@ -103,20 +103,22 @@ NewFloppyDialog::NewFloppyDialog(MediaType type, QWidget *parent, int tape_drive
             break;
         case MediaType::Mo:
             for (int i = 0; i < KNOWN_MO_TYPES; ++i) {
-                Models::AddEntry(model, tr(mo_types[i].name), i);
+                if ((drive_type < 0) || (drive_type >= KNOWN_MO_DRIVE_TYPES) ||
+                    mo_drive_types[drive_type].supported_media[i])
+                    Models::AddEntry(model, tr(mo_types[i].name), i);
             }
             ui->fileField->setFilter(tr("MO images") % util::DlgFilter({ "im?", "img", "mdi" }) % tr("All files") % util::DlgFilter({ "*" }, true));
             break;
         case MediaType::Tape:
             ui->labelSize->setText(tr("Tape type:"));
             for (int i = 0; i < KNOWN_TAPE_TYPES; ++i) {
-                if ((tape_drive_type < 0) || (tape_drive_type >= KNOWN_TAPE_DRIVE_TYPES) ||
-                    tape_drive_types[tape_drive_type].supported_media[i])
+                if ((drive_type < 0) || (drive_type >= KNOWN_TAPE_DRIVE_TYPES) ||
+                    tape_drive_types[drive_type].supported_media[i])
                     Models::AddEntry(model, tr(tape_types[i].name), i);
             }
-            if ((tape_drive_type >= 0) && (tape_drive_type < KNOWN_TAPE_DRIVE_TYPES)) {
+            if ((drive_type >= 0) && (drive_type < KNOWN_TAPE_DRIVE_TYPES)) {
                 const auto matches = model->match(model->index(0, 0), Qt::UserRole,
-                                                  tape_drive_types[tape_drive_type].default_media);
+                                                  tape_drive_types[drive_type].default_media);
                 if (!matches.isEmpty())
                     ui->comboBoxSize->setCurrentIndex(matches.first().row());
             }
