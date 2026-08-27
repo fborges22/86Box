@@ -77,19 +77,6 @@ static const QStringList rdiskTypes = {
 #endif
 };
 
-static const QStringList moTypes = {
-    "3.5\" 128 MB (ISO 10090)",
-    "3.5\" 230 MB (ISO 13963)",
-    "3.5\" 540 MB (ISO 15498)",
-    "3.5\" 640 MB (ISO 15498)",
-    "3.5\" 1.3 GB (GigaMO)",
-    "3.5\" 2.3 GB (GigaMO 2)",
-    "5.25\" 600 MB",
-    "5.25\" 650 MB",
-    "5.25\" 1 GB",
-    "5.25\" 1.3 GB",
-};
-
 NewFloppyDialog::NewFloppyDialog(MediaType type, QWidget *parent, int tape_drive_type)
     : QDialog(parent)
     , ui(new Ui::NewFloppyDialog)
@@ -115,8 +102,8 @@ NewFloppyDialog::NewFloppyDialog(MediaType type, QWidget *parent, int tape_drive
             ui->fileField->setFilter(tr("Removable disk images") % util::DlgFilter({ "im?", "img", "rdi", "zdi" }) % tr("All files") % util::DlgFilter({ "*" }, true));
             break;
         case MediaType::Mo:
-            for (int i = 0; i < moTypes.size(); ++i) {
-                Models::AddEntry(model, tr(moTypes[i].toUtf8().data()), i);
+            for (int i = 0; i < KNOWN_MO_TYPES; ++i) {
+                Models::AddEntry(model, tr(mo_types[i].name), i);
             }
             ui->fileField->setFilter(tr("MO images") % util::DlgFilter({ "im?", "img", "mdi" }) % tr("All files") % util::DlgFilter({ "*" }, true));
             break;
@@ -227,8 +214,9 @@ NewFloppyDialog::onCreate()
                 fileType = fi.suffix().toLower() == QStringLiteral("mdi") ? FileType::Mdi : FileType::Img;
 
                 std::atomic_bool res;
-                std::thread      t([this, &res, filename, fileType, &progress] {
-                    res = createMoSectorImage(filename, ui->comboBoxSize->currentIndex(), fileType, progress);
+                const int media_type = mediaTypeIndex();
+                std::thread      t([this, &res, filename, media_type, fileType, &progress] {
+                    res = createMoSectorImage(filename, media_type, fileType, progress);
                 });
                 progress.exec();
                 t.join();

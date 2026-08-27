@@ -29,24 +29,29 @@
 #define MO_IMAGE_HISTORY 10
 
 typedef struct mo_type_t {
+    const char *name;
     uint32_t sectors;
     uint16_t bytes_per_sector;
 } mo_type_t;
 
-#define KNOWN_MO_TYPES 10
+#define KNOWN_MO_TYPES 13
 static const mo_type_t mo_types[KNOWN_MO_TYPES] = {
   // 3.5" standard M.O. disks
-    { 248826,   512 },
-    { 446325,   512 },
-    { 1041500,  512 },
-    { 310352,  2048 },
-    { 605846,  2048 },
-    { 1063146, 2048 },
+    { "3.5\" 128 MB (ISO 10090)", 248826,   512 },
+    { "3.5\" 230 MB (ISO 13963)", 446325,   512 },
+    { "3.5\" 540 MB (ISO 15498)", 1041500,  512 },
+    { "3.5\" 640 MB (ISO 15498)", 310352,  2048 },
+    { "3.5\" 1.3 GB (GigaMO)",    605846,  2048 },
+    { "3.5\" 2.3 GB (GigaMO 2)",  1063146, 2048 },
  // 5.25" M.O. disks
-    { 573624,   512 },
-    { 314568,  1024 },
-    { 904995,   512 },
-    { 637041,  1024 },
+    { "5.25\" 600 MB",              573624,   512 },
+    { "5.25\" 650 MB",              314568,  1024 },
+    { "5.25\" 1 GB",                904995,   512 },
+    { "5.25\" 1.3 GB",              637041,  1024 },
+ // Other rewritable phase-change optical disks
+    { "5.25\" 650 MB PD",           1281856,  512 },
+    { "5.25\" 2.6 GB DVD-RAM",      1218960, 2048 },
+    { "5.25\" 4.7 GB DVD-RAM",      2236704, 2048 },
 };
 
 typedef struct mo_drive_type_t {
@@ -54,12 +59,13 @@ typedef struct mo_drive_type_t {
     const char *model;
     const char *revision;
     int8_t      supported_media[KNOWN_MO_TYPES];
+    uint8_t     direct_access;
 } mo_drive_type_t;
 
-#define KNOWN_MO_DRIVE_TYPES 22
+#define KNOWN_MO_DRIVE_TYPES 25
 static const mo_drive_type_t mo_drive_types[KNOWN_MO_DRIVE_TYPES] = {
-    {"86BOX",     "MAGNETO OPTICAL", "1.00", { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }},
-    { "FUJITSU",  "M2512A",          "1314", { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 }},
+    {"86BOX",     "MAGNETO OPTICAL", "1.00", { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }},
+    { "FUJITSU",  "M2512A",          "1314", { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }},
     { "FUJITSU",  "M2513-MCC3064SS", "1.00", { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0 }},
     { "FUJITSU",  "MCE3130SS",       "0070", { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 }},
     { "FUJITSU",  "MCF3064SS",       "0030", { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0 }},
@@ -80,6 +86,9 @@ static const mo_drive_type_t mo_drive_types[KNOWN_MO_DRIVE_TYPES] = {
     { "SONY",     "SMO-C501",        "1.00", { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 }},
     { "TEAC",     "OD-3000",         "1.00", { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }},
     { "TOSHIBA",  "OD-D300",         "1.00", { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }},
+    { "MATSHITA", "PD-1 LF-1000",     "A109", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 }, 1},
+    { "MATSHITA", "DVD-RAM LF-D101",  "A113", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0 }, 1},
+    { "MATSHITA", "DVD-RAM LF-D201",  "A100", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 }, 1},
 };
 
 enum {

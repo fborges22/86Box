@@ -73,6 +73,7 @@ const uint8_t mo_command_flags[0x100] = {
     [0x1b]          = IMPLEMENTED | CHECK_READY,
     [0x1d]          = IMPLEMENTED,
     [0x1e]          = IMPLEMENTED | CHECK_READY,
+    [0x23]          = IMPLEMENTED,
     [0x25]          = IMPLEMENTED | CHECK_READY,
     [0x28]          = IMPLEMENTED | CHECK_READY,
     [0x2a ... 0x2c] = IMPLEMENTED | CHECK_READY,
@@ -1645,7 +1646,7 @@ mo_command(scsi_common_t *sc, const uint8_t *cdb)
                 preamble_len = 4;
                 size_idx     = 3;
 
-                dev->buffer[idx++] = 7;         /* Optical disk */
+                dev->buffer[idx++] = mo_drive_types[dev->drv->type].direct_access ? 0 : 7;
                 dev->buffer[idx++] = cdb[2];
                 dev->buffer[idx++] = 0;
 
@@ -1676,7 +1677,7 @@ mo_command(scsi_common_t *sc, const uint8_t *cdb)
                 if ((cdb[1] & 0xe0) || ((dev->cur_lun > 0x00) && (dev->cur_lun < 0xff)))
                     dev->buffer[0] = 0x7f;    /* No physical device on this LUN */
                 else
-                    dev->buffer[0] = 0x07;    /* Optical disk */
+                    dev->buffer[0] = mo_drive_types[dev->drv->type].direct_access ? 0x00 : 0x07;
                 dev->buffer[1] = 0x80;        /* Removable */
                 /* SCSI-2 compliant */
                 dev->buffer[2] = (dev->drv->bus_type == MO_BUS_SCSI) ? 0x02 : 0x00;
@@ -1766,6 +1767,36 @@ mo_command(scsi_common_t *sc, const uint8_t *cdb)
             mo_set_buf_len(dev, BufLen, &len);
 
             mo_data_command_finish(dev, len, len, len, 0);
+            break;
+
+        case GPCMD_READ_FORMAT_CAPACITIES:
+            alloc_length = (cdb[7] << 8) | cdb[8];
+            len          = (dev->drv->fp != NULL) ? 20 : 12;
+
+            mo_buf_alloc(dev, len);
+            memset(dev->buffer, 0, len);
+
+            /* Capacity-list header followed by the current/maximum descriptor. */
+            dev->buffer[3] = len - 4;
+            max_len        = dev->drv->medium_size;
+            dev->buffer[4] = (max_len >> 24) & 0xff;
+            dev->buffer[5] = (max_len >> 16) & 0xff;
+            dev->buffer[6] = (max_len >> 8) & 0xff;
+            dev->buffer[7] = max_len & 0xff;
+            dev->buffer[8] = (dev->drv->fp != NULL) ? 2 : 3;
+            dev->buffer[9] = (dev->drv->sector_size >> 16) & 0xff;
+            dev->buffer[10] = (dev->drv->sector_size >> 8) & 0xff;
+            dev->buffer[11] = dev->drv->sector_size & 0xff;
+
+            if (dev->drv->fp != NULL) {
+                memcpy(dev->buffer + 12, dev->buffer + 4, 4);
+                dev->buffer[16] = 0; /* Full format. */
+                memcpy(dev->buffer + 17, dev->buffer + 9, 3);
+            }
+
+            len = MIN(len, alloc_length);
+            mo_set_buf_len(dev, BufLen, &len);
+            mo_data_command_finish(dev, len, len, alloc_length, 0);
             break;
 
         case GPCMD_ERASE_10:
